@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const dotenv = require('dotenv');
+const jwt = require("jsonwebtoken");
 const User = require('./models/user')
 
 dotenv.config();
@@ -15,6 +16,31 @@ mongoose.connect(process.env.MONGO, {
 const app = express();
 app.use('/', express.static(path.join(__dirname, 'static')));
 app.use(bodyParser.json());
+
+app.post('/api/login', async (req, res) => {
+	const { username, password } = req.body
+	const user = await User.findOne({ username }).lean()
+
+	if (!user) {
+		return res.json({ status: 'error', error: 'Invalid username/password' })
+	}
+
+	if (await bcrypt.compare(password, user.password)) {
+		// the username, password combination is successful
+
+		const token = jwt.sign(
+			{
+				id: user._id,
+				username: user.username
+			},
+			process.env.JWT_SECRET
+		)
+
+		return res.json({ status: 'ok', data: token })
+	}
+
+	res.json({ status: 'error', error: 'Invalid username/password' })
+})
 
 app.post('/api/register', async (req, res) => {
     const { username, password: plainTextPassword } = req.body
@@ -30,7 +56,7 @@ app.post('/api/register', async (req, res) => {
     if (plainTextPassword.length < 5) {
         return res.json({
             status: 'error',
-            error: 'Password too small. Should be atleast 6 characters'
+            error: 'Password too small'
         })
     }
 
