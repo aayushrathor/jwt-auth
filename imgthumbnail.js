@@ -15,11 +15,6 @@ const fileStorageEngine = multer.diskStorage({
 });
 const upload = multer({ storage: fileStorageEngine });
 
-async function usertext() {
-    const userinput = document.getElementById("imgtext").value;
-    console.log(userinput);
-}
-
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname + '/static/imgthumbnail.html'));
 });
